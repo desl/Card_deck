@@ -1,5 +1,7 @@
 from random import randint
 from functools import wraps
+import csv
+import collections
 
 def log(f,*args,**kwargs):
 	@wraps(f)
@@ -11,7 +13,8 @@ def log(f,*args,**kwargs):
 class Deck():
 
 	def __init__(self):
-		self.cards = [Card(val, suit) for suit in ["Hearts","Diamonds","Clubs","Spades"] for val in ["A",2,3,4,5,6,7,8,9,10,"J","Q","K"]]
+		self.cards = [Card(val, suit) for suit in ["Hearts"] for val in ["A",2,3,4,"Q","K"]]
+		# self.cards = [Card(val, suit) for suit in ["Hearts","Diamonds","Clubs","Spades"] for val in ["A",2,3,4,5,6,7,8,9,10,"J","Q","K"]]
 		self.shoe = self.cards[:]
 		self.discarded = []
 		self.dealt = []
@@ -30,13 +33,53 @@ class Deck():
 			new_deck.append(self.shoe.pop(random_card_idx))
 		self.shoe = new_deck
 
-	@log
+	def save_deck(self):
+		self.pack('shoe.csv',self.shoe)
+		self.pack('dealt.csv',self.dealt)
+		self.pack('discarded.csv',self.discarded)
+
+	def load_deck(self):
+		self.shoe = self.unpack('shoe.csv',self.shoe)
+		self.dealt = self.unpack('dealt.csv',self.dealt)
+		# self.unpack('discarded.csv',self.discarded)
+
+	def pack(self,file_name,arr):
+		with open(file_name, 'w') as csvfile:
+			data_writer = csv.writer(csvfile, delimiter="|")
+			for c in arr:
+				data_writer.writerow([c.val, c.suit])
+			csvfile.close()
+
+	def unpack(self,file_name,arr):
+		local_arr = []
+		with open(file_name) as csvfile:
+			reader = csv.reader(csvfile, delimiter='|')
+			rows = list(reader)
+			for row in rows:
+				local_arr.append(row)
+		arr = []
+		# print("arr")
+		# print(arr)
+		# print("self.shoe before")
+		# print(self.shoe)
+		for c in local_arr:
+			for cr in self.cards:
+				if self.same(c[0],cr.val,c[1],cr.suit):
+					arr.append(cr)
+		# print("self.shoe after")
+		# print(self.shoe)
+		return arr
+
+	def same(self,v1,v2,s1,s2):  # (value1,value2,suit1,suit2)
+		return str(v1) == str(v2) and str(s1) == str(s2)
+
+	# @log
 	def deal_one(self):
 		card = self.shoe.pop()
 		self.dealt.append(card)
 		return card
 
-	@log
+	# @log
 	def deal(self, how_many):
 		counter = 0
 		card_arr = []
@@ -82,15 +125,7 @@ class Player:
 		self.hand = []
 
 
-d = Deck()
-d.shuffle()
 
-# print(d)
-# print("{} cards".format(len(d.shoe)))
-
-for i in d:
-	print(i)
-
-print(d.deal_one())
+# print(d.dealt)
 # print(d.deal(5))
 # d.deal_one()
